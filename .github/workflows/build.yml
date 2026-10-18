@@ -1,0 +1,60 @@
+name: Build VideoDrop
+
+on:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  macos:
+    name: Mac (${{ matrix.label }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            arch: arm64
+            label: Apple Silicon
+          - runner: macos-15-intel
+            arch: x86_64
+            label: Intel
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify source engine
+        run: |
+          swiftc -swift-version 5 -parse-as-library Source/DownloadEngine.swift Tests/EngineTests.swift -o "$RUNNER_TEMP/videodrop-engine-tests"
+          "$RUNNER_TEMP/videodrop-engine-tests"
+
+      - name: Download checked tools
+        run: bash scripts/fetch-tools.sh "${{ matrix.arch }}" dist/tools
+
+      - name: Build and smoke test VideoDrop
+        run: |
+          bash scripts/build-macos.sh dist/tools
+          file dist/VideoDrop.app/Contents/MacOS/VideoDrop
+          ditto -c -k --keepParent dist/VideoDrop.app "VideoDrop-macOS-${{ matrix.arch }}.zip"
+          shasum -a 256 "VideoDrop-macOS-${{ matrix.arch }}.zip" > "VideoDrop-macOS-${{ matrix.arch }}.zip.sha256"
+
+      - name: Keep downloadable build for testing
+        uses: actions/upload-artifact@v4
+        with:
+          name: VideoDrop-macOS-${{ matrix.arch }}
+          path: |
+            VideoDrop-macOS-${{ matrix.arch }}.zip
+            VideoDrop-macOS-${{ matrix.arch }}.zip.sha256
+          if-no-files-found: error
+
+      - name: Attach downloadable app to GitHub Release
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" \
+            "VideoDrop-macOS-${{ matrix.arch }}.zip" \
+            "VideoDrop-macOS-${{ matrix.arch }}.zip.sha256"

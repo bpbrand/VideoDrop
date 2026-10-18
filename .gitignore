@@ -1,0 +1,8 @@
+# macOS and build output
+.DS_Store
+.build/
+dist/
+*.app/
+*.dmg
+*.xcarchive
+*.swp
