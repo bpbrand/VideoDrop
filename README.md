@@ -35,7 +35,7 @@ Supports macOS **13 or later** on Apple Silicon and Intel Macs. Supported sites 
 curl -fsSL https://raw.githubusercontent.com/bpbrand/VideoDrop/main/install.sh | bash
 ```
 
-Review the [installer script](install.sh) before running it. It downloads the right release for your Mac, checks its SHA-256 checksum, and installs the app to your personal Applications folder.
+Review the [installer script](install.sh) before running it. It downloads the right release for your Mac, checks its SHA-256 checksum, and installs the app to Applications (or your personal Applications folder if needed), and opens the installed copy.
 
 </details>
 
